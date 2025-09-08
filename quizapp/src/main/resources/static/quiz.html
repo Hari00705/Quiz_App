@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Quiz</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          background: #f9f9f9;
+          padding: 40px;
+          color: #333;
+        }
+        .question-block {
+          background: #fff;
+          border-radius: 10px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          padding: 20px;
+          margin-bottom: 20px;
+        }
+        .question {
+          font-weight: bold;
+        }
+        .option {
+          margin: 5px 0;
+        }
+        button {
+          padding: 10px 20px;
+          font-size: 16px;
+          background: #007bff;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+        }
+        button:hover {
+          background: #0056b3;
+        }
+        #loading {
+          font-size: 18px;
+          color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📝 Your Quiz</h1>
+<p>⏳ Time left: <span id="countdown">100</span> seconds</p>
+<div id="loading">Loading quiz, please wait...</div>
+<div id="quiz-container"></div>
+<button id="submitBtn" style="display: none;" onclick="submitQuiz()">Submit Quiz</button>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const categoryId = params.get('categoryId');
+    const num = params.get('num');
+    let quizQuestions = [];
+    let submitted = false;
+    let score = 0;
+
+    async function fetchQuiz() {
+      try {
+        const response = await fetch(`/api/quizzes/generate?categoryId=${categoryId}&num=${num}`);
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+        quizQuestions = await response.json();
+
+        if (!quizQuestions || quizQuestions.length === 0) {
+          document.getElementById('loading').innerText = "❌ No questions found for this category.";
+          return;
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('submitBtn').style.display = 'block';
+        displayQuiz(quizQuestions);
+        startTimer();
+
+      } catch (error) {
+        console.error("Fetch error:", error);
+        document.getElementById('loading').innerText = "⚠ Error loading quiz. Please try again.";
+      }
+    }
+
+    function displayQuiz(questions) {
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = '';
+
+      questions.forEach((q, index) => {
+        const qDiv = document.createElement('div');
+        qDiv.className = 'question-block';
+
+        const questionHtml = `
+          <div class="question">Q${index + 1}: ${q.content}</div>
+          <div class="option"><input type="radio" name="q${index}" value="${q.option1}"> ${q.option1}</div>
+          <div class="option"><input type="radio" name="q${index}" value="${q.option2}"> ${q.option2}</div>
+          <div class="option"><input type="radio" name="q${index}" value="${q.option3}"> ${q.option3}</div>
+          <div class="option"><input type="radio" name="q${index}" value="${q.option4}"> ${q.option4}</div>
+        `;
+
+        qDiv.innerHTML = questionHtml;
+        container.appendChild(qDiv);
+      });
+    }
+
+    function startTimer() {
+      let timeLeft = 100;
+      const countdownSpan = document.getElementById("countdown");
+
+      const timerInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          if (!submitted) {
+            alert("⏰ Time's up! Submitting quiz...");
+            submitQuiz(true);
+          }
+        } else {
+          countdownSpan.textContent = timeLeft;
+          timeLeft--;
+        }
+      }, 1000);
+    }
+
+    function submitQuiz(auto = false) {
+      if (submitted) return;
+      submitted = true;
+      score = 0;
+
+      quizQuestions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="q${index}"]:checked`);
+        const questionBlock = document.querySelectorAll('.question-block')[index];
+        const options = questionBlock.querySelectorAll('input[type="radio"]');
+
+        options.forEach(opt => {
+          const label = opt.parentElement;
+          if (opt.value === q.answer) {
+            label.style.color = 'green';
+            label.style.fontWeight = 'bold';
+          } else if (selected && opt === selected && opt.value !== q.answer) {
+            label.style.color = 'red';
+            label.style.fontWeight = 'bold';
+          }
+          opt.disabled = true;
+        });
+
+        if (selected && selected.value === q.answer) {
+          score++;
+        }
+      });
+
+      sessionStorage.setItem("quizScore", score);
+      sessionStorage.setItem("total", quizQuestions.length);
+
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.textContent = "Get Result";
+      submitBtn.onclick = () => {
+        window.location.href = "result.html";
+      };
+    }
+
+    fetchQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Quiz Result</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          background: #f1f1f1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+        }
+        .score-circle {
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: #007bff;
+          color: white;
+          font-size: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .home-link {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          text-decoration: none;
+          background: #28a745;
+          padding: 10px 20px;
+          color: white;
+          border-radius: 5px;
+          font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<a class="home-link" href="index.html">🏠 Home</a>
+<div class="score-circle" id="scoreDisplay">5/5</div>
+
+<script>
+    const score = sessionStorage.getItem("quizScore")||0;
+    const total = sessionStorage.getItem("total")||0;
+    document.getElementById("scoreDisplay").textContent = `${score} / ${total}`;
+</script>
+</body>
+</html>
